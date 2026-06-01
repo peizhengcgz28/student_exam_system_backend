@@ -32,12 +32,12 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     Raises:
         HTTPException: 如果用户名或手机号已存在
     """
-    logger.info(f"📝 Registration attempt for user: {user_in.name}, phone: {user_in.phone}")
+    logger.info(f"[REG] Registration attempt for user: {user_in.name}, phone: {user_in.phone}")
     
     # 检查用户名是否已存在
     existing_user = await get_user_by_name(db, name=user_in.name)
     if existing_user:
-        logger.warning(f"⚠️  Registration failed - Username already exists: {user_in.name}")
+        logger.warning(f"[WARN] Registration failed - Username already exists: {user_in.name}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="该用户名已被使用",
@@ -46,7 +46,7 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     # 检查手机号是否已存在
     existing_user = await get_user_by_phone(db, phone=user_in.phone)
     if existing_user:
-        logger.warning(f"⚠️  Registration failed - Phone already exists: {user_in.phone}")
+        logger.warning(f"[WARN] Registration failed - Phone already exists: {user_in.phone}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="该手机号已被注册",
@@ -54,7 +54,7 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     
     # 创建新用户
     user = await create_user(db, user_in=user_in)
-    logger.info(f"✅ User registered successfully: ID={user.id}, Name={user.name}")
+    logger.info(f"[OK] User registered successfully: ID={user.id}, Name={user.name}")
     
     return user
 
@@ -77,14 +77,14 @@ async def login(
     Raises:
         HTTPException: 如果用户名或密码错误
     """
-    logger.info(f"🔑 Login attempt for user: {form_data.username}")
+    logger.info(f"[LOGIN] Login attempt for user: {form_data.username}")
     
     # 通过用户名查询用户（OAuth2PasswordRequestForm 的 username 字段）
     user = await get_user_by_name(db, name=form_data.username)
     
     # 验证用户是否存在且密码正确
     if not user or not verify_password(form_data.password, user.hashed_password):
-        logger.warning(f"❌ Login failed - Invalid credentials for user: {form_data.username}")
+        logger.warning(f"[DENIED] Login failed - Invalid credentials for user: {form_data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误",
@@ -98,9 +98,10 @@ async def login(
         expires_delta=access_token_expires
     )
     
-    logger.info(f"✅ Login successful - User ID: {user.id}, Token issued")
+    logger.info(f"[OK] Login successful - User ID: {user.id}, Token issued")
     
     return {
         "access_token": access_token,
         "token_type": "bearer"
     }
+
